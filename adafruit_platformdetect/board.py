@@ -162,7 +162,7 @@ class Board:
         elif chip_id == chips.RK3328:
             board_id = self._rock_pi_id()
         elif chip_id == chips.RK3566:
-            board_id = self._rk3566_id()
+            board_id = self._rk3566_id() or self._pine64_id()
         elif chip_id == chips.RK3568:
             board_id = self._rk3568_id()
         elif chip_id == chips.RK3588:
@@ -466,6 +466,8 @@ class Board:
             board = boards.PINEBOOK
         elif "sopine" in board_value.lower():
             board = boards.SOPINE
+        elif "quartz64-brockchip" in board_value.lower():
+            board =boards.QUARTZ64_MODEL_B
         return board
 
     # pylint: disable=no-self-use
