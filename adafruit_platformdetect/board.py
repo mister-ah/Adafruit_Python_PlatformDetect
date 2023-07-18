@@ -65,6 +65,8 @@ class Board:
             board_id = self._armbian_id() or self._allwinner_variants_id()
         elif chip_id == chips.BCM2XXX:
             board_id = self._pi_id()
+        elif chip_id == chips.AM625X:
+            board_id = self._beaglebone_id()
         elif chip_id == chips.AM33XX:
             board_id = self._beaglebone_id()
         elif chip_id == chips.AM65XX:
@@ -81,6 +83,8 @@ class Board:
             board_id = self._sama5_id()
         elif chip_id == chips.IMX8MX:
             board_id = self._imx8mx_id()
+        elif chip_id == chips.IMX8MP:
+            board_id = self._imx8mp_id()
         elif chip_id == chips.IMX6ULL:
             board_id = self._imx6ull_id()
         elif chip_id == chips.S905Y2:
@@ -150,7 +154,14 @@ class Board:
         elif chip_id == chips.RK3308:
             board_id = self._rock_pi_id()
         elif chip_id == chips.RK3399:
-            board_id = self._rock_pi_id() or self._armbian_id() or self._diet_pi_id()
+            board_id = (
+                self._rock_pi_id()
+                or self._armbian_id()
+                or self._diet_pi_id()
+                or self._asus_tinker_board_id()
+            )
+        elif chip_id == chips.RK3399PRO:
+            board_id = self._asus_tinker_board_id()
         elif chip_id == chips.RK3399_T:
             board_id = self._rock_pi_id() or self._armbian_id()
         elif chip_id == chips.ATOM_X5_Z8350:
@@ -171,6 +182,8 @@ class Board:
             board_id = self._udoo_id()
         elif chip_id == chips.PENTIUM_N3710:
             board_id = self._udoo_id()
+        elif chip_id == chips.CELERON_N5105:
+            board_id = self._intel_n_series_id()
         elif chip_id == chips.STM32MP157:
             board_id = self._stm32mp1_id()
         elif chip_id == chips.STM32MP157DAA1:
@@ -182,7 +195,7 @@ class Board:
         elif chip_id == chips.GENERIC_X86:
             board_id = boards.GENERIC_LINUX_PC
         elif chip_id == chips.TDA4VM:
-            board_id = self._tisk_id()
+            board_id = self._beaglebone_id() or self._tisk_id()
         elif chip_id == chips.D1_RISCV:
             board_id = self._armbian_id()
         elif chip_id == chips.S905X:
@@ -197,10 +210,16 @@ class Board:
         # Check for Pi boards:
         pi_rev_code = self._pi_rev_code()
         if pi_rev_code:
-            for model, codes in boards._PI_REV_CODES.items():
-                if pi_rev_code in codes:
-                    return model
+            from adafruit_platformdetect.revcodes import PiDecoder
 
+            try:
+                decoder = PiDecoder(pi_rev_code)
+                model = boards._PI_MODELS[decoder.type_raw]
+                if isinstance(model, dict):
+                    model = model[decoder.revision]
+                return model
+            except ValueError:
+                pass
         # We may be on a non-Raspbian OS, so try to lazily determine
         # the version based on `get_device_model`
         else:
@@ -268,7 +287,12 @@ class Board:
                 with open("/sys/bus/nvmem/devices/0-00501/nvmem", "rb") as eeprom:
                     eeprom_bytes = eeprom.read(16)
             except FileNotFoundError:
-                return None
+                try:
+                    # Special Case for AI64
+                    with open("/sys/bus/nvmem/devices/2-00500/nvmem", "rb") as eeprom:
+                        eeprom_bytes = eeprom.read(16)
+                except FileNotFoundError:
+                    return None
 
         if eeprom_bytes[:4] != b"\xaaU3\xee":
             return None
@@ -277,6 +301,14 @@ class Board:
         # refer to GitHub issue #57 in this repo for more info
         if eeprom_bytes == b"\xaaU3\xeeA335BNLT\x1a\x00\x00\x00":
             return boards.BEAGLEBONE_GREEN
+
+        # BeaglePlay Special Condition
+        # new Beagle EEPROM IDs are 24 Bit, so we need to verify full range
+        if eeprom_bytes == b"\xaaU3\xee\x017\x00\x10.\x00BEAGLE":
+            with open("/sys/bus/nvmem/devices/0-00500/nvmem", "rb") as eeprom:
+                eeprom_bytes = eeprom.read(24)
+            if eeprom_bytes == b"\xaaU3\xee\x017\x00\x10.\x00BEAGLEPLAY-A0-":
+                return boards.BEAGLE_PLAY
 
         id_string = eeprom_bytes[4:].decode("ascii")
         for model, bb_ids in boards._BEAGLEBONE_BOARD_IDS.items():
@@ -348,6 +380,8 @@ class Board:
             board = boards.BANANA_PI_M2_ZERO
         elif board_value == "bananapim2plus":
             board = boards.BANANA_PI_M2_PLUS
+        elif board_value == "bananapim2berry":
+            board = boards.BANANA_PI_M2_BERRY
         elif board_value == "bananapim5":
             board = boards.BANANA_PI_M5
         elif board_value == "orangepizeroplus2-h5":
@@ -418,6 +452,13 @@ class Board:
             return boards.MAAXBOARD
         if "Phanbell" in board_value:
             return boards.CORAL_EDGE_TPU_DEV
+        return None
+
+    def _imx8mp_id(self) -> Optional[str]:
+        """Check what type iMX8M board."""
+        board_value = self.detector.get_device_model()
+        if "NXP i.MX8MPlus SOM" in board_value:
+            return boards.NXP_IMX8MPLUS_SOM
         return None
 
     def _imx6ull_id(self) -> Optional[str]:
@@ -495,7 +536,7 @@ class Board:
         board = None
         if board_value and "LubanCat-Zero" in board_value:
             board = boards.LUBANCAT_ZERO
-        if board_value and "LubanCat1" in board_value:
+        if board_value and any(x in board_value for x in ("LubanCat1", "LubanCat-1")):
             board = boards.LUBANCAT1
         if board_value and "Radxa CM3 IO" in board_value:
             board = boards.RADXA_CM3
@@ -505,7 +546,7 @@ class Board:
         """Check what type of rk3568 board."""
         board_value = self.detector.get_device_model()
         board = None
-        if board_value and "LubanCat2" in board_value:
+        if board_value and any(x in board_value for x in ("LubanCat2", "LubanCat-2")):
             board = boards.LUBANCAT2
         if board_value and "ROCK3 Model A" in board_value:
             board = boards.ROCK_PI_3A
@@ -559,6 +600,13 @@ class Board:
 
         return None
 
+    def _intel_n_series_id(self) -> Optional[str]:
+        """Try to detect the id of an Intel N-Series board."""
+        if self.detector.check_board_name_value() == "ODROID-H3":
+            return boards.ODROID_H3
+
+        return None
+
     def _j4105_id(self) -> Optional[str]:
         """Try to detect the id of J4105 board."""
         try:
@@ -577,7 +625,12 @@ class Board:
         board_value = self.detector.get_device_model()
         board = None
         if board_value and "ASUS Tinker Board" in board_value:
-            board = boards._ASUS_TINKER_BOARD_IDS
+            board = boards.ASUS_TINKER_BOARD
+        if board_value and "ASUS TINKER BOARD 2" in board_value:
+            board = boards.ASUS_TINKER_BOARD_2
+        if board_value and "ASUS_TINKER_EDGE_R" in board_value:
+            board = boards.ASUS_TINKER_EDGE_R
+
         return board
 
     def _pcduino_board_id(self) -> Optional[str]:
@@ -598,11 +651,14 @@ class Board:
             return board
         board_value = board_value.lower()
         chip_id = self.detector.chip.id
+
+        if "banana pi m2 berry" in board_value:
+            board = boards.BANANA_PI_M2_BERRY
+
         if "nanopi" in board_value:
             if "neo" in board_value and "SUN8I" in chip_id:
                 board = boards.NANOPI_NEO_AIR
-            # TODO: Add other specifc board contexts here
-        elif "orange pi" in board_value:
+        elif any(x in board_value for x in ("orange pi", "orangepi")):
             if "zero" in board_value:
                 if "H5" in chip_id:
                     board = boards.ORANGE_PI_ZERO_PLUS_2H5
@@ -610,6 +666,8 @@ class Board:
                     board = boards.ORANGE_PI_ZERO_2
             # TODO: Add other specifc board contexts here
         return board
+
+    # pylint: disable=too-many-return-statements
 
     def _rp2040_u2if_id(self) -> Optional[str]:
         import hid
@@ -637,8 +695,22 @@ class Board:
                 # MacroPad RP2040
                 if product == 0x0107:
                     return boards.MACROPAD_U2IF
+                # Feather RP2040 ThinkInk
+                if product == 0x812C:
+                    return boards.FEATHER_EPD_U2IF
+                # Feather RP2040 RFM
+                if product == 0x812E:
+                    return boards.FEATHER_RFM_U2IF
+                # Feather RP2040 CAN
+                if product == 0x8130:
+                    return boards.FEATHER_CAN_U2IF
+                # KB2040 Kee Board
+                if product == 0x0105:
+                    return boards.KB2040_U2IF
         # Will only reach here if a device was added in chip.py but here.
         raise RuntimeError("RP2040_U2IF device was added to chip but not board.")
+
+    # pylint: enable=too-many-return-statements
 
     def _siemens_simatic_iot2000_id(self) -> Optional[str]:
         """Try to detect if this is a IOT2050 Gateway."""
@@ -714,6 +786,11 @@ class Board:
     def any_odroid_40_pin(self) -> bool:
         """Check whether the current board is any defined 40-pin Odroid."""
         return self.id in boards._ODROID_40_PIN_IDS
+
+    @property
+    def any_odroid_mini_pc(self) -> bool:
+        """Check whether the current board is any defined Odroid Mini PC."""
+        return self.id in boards._ODROID_MINI_PC_IDS
 
     @property
     def khadas_vim3_40_pin(self) -> bool:
@@ -801,6 +878,11 @@ class Board:
         return self.id in boards._LIBRE_COMPUTER_IDS
 
     @property
+    def any_nxp_navq_board(self) -> bool:
+        """Check whether the current board is any NXP NavQ board"""
+        return self.id in boards._NXP_SOM_IDS
+
+    @property
     def os_environ_board(self) -> bool:
         """Check whether the current board is an OS environment variable special case."""
 
@@ -812,10 +894,14 @@ class Board:
             yield self.board.GREATFET_ONE
             yield self.board.PICO_U2IF
             yield self.board.FEATHER_U2IF
+            yield self.board.FEATHER_CAN_U2IF
+            yield self.board.FEATHER_EPD_U2IF
+            yield self.board.FEATHER_RFM_U2IF
             yield self.board.ITSYBITY_U2IF
             yield self.board.MACROPAD_U2IF
             yield self.board.QTPY_U2IF
             yield self.board.QT2040_TRINKEY_U2IF
+            yield self.board.KB2040_U2IF
 
         return any(condition for condition in lazily_generate_conditions())
 
@@ -833,6 +919,7 @@ class Board:
             yield self.any_jetson_board
             yield self.any_coral_board
             yield self.any_odroid_40_pin
+            yield self.any_odroid_mini_pc
             yield self.khadas_vim3_40_pin
             yield self.any_96boards
             yield self.any_sifive_board
@@ -854,6 +941,7 @@ class Board:
             yield self.any_pcduino_board
             yield self.any_libre_computer_board
             yield self.generic_linux
+            yield self.any_nxp_navq_board
 
         return any(condition for condition in lazily_generate_conditions())
 
@@ -888,6 +976,21 @@ class Board:
         return self.id == boards.FEATHER_U2IF
 
     @property
+    def feather_can_u2if(self) -> bool:
+        """Check whether the current board is a Feather CAN Bus RP2040 w/ u2if."""
+        return self.id == boards.FEATHER_CAN_U2IF
+
+    @property
+    def feather_epd_u2if(self) -> bool:
+        """Check whether the current board is a Feather ThinkInk RP2040 w/ u2if."""
+        return self.id == boards.FEATHER_EPD_U2IF
+
+    @property
+    def feather_rfm_u2if(self) -> bool:
+        """Check whether the current board is a Feather RFM RP2040 w/ u2if."""
+        return self.id == boards.FEATHER_RFM_U2IF
+
+    @property
     def itsybitsy_u2if(self) -> bool:
         """Check whether the current board is a Itsy Bitsy w/ u2if."""
         return self.id == boards.ITSYBITSY_U2IF
@@ -906,6 +1009,11 @@ class Board:
     def qt2040_trinkey_u2if(self) -> bool:
         """Check whether the current board is a QT Py w/ u2if."""
         return self.id == boards.QT2040_TRINKEY_U2IF
+
+    @property
+    def kb2040_u2if(self) -> bool:
+        """Check whether the current board is a KB2040 w/ u2if."""
+        return self.id == boards.KB2040_U2IF
 
     @property
     def binho_nova(self) -> bool:

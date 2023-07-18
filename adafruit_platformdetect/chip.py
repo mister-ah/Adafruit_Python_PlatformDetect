@@ -42,12 +42,11 @@ class Chip:
         self.detector = detector
         self._chip_id = None
 
+    # pylint: disable=invalid-name,too-many-branches,too-many-return-statements
     @property
     def id(
         self,
-    ) -> Optional[
-        str
-    ]:  # pylint: disable=invalid-name,too-many-branches,too-many-return-statements
+    ) -> Optional[str]:
         """Return a unique id for the detected chip, if any."""
         # There are some times we want to trick the platform detection
         # say if a raspberry pi doesn't have the right ID, or for testing
@@ -118,8 +117,22 @@ class Chip:
                         # QT Py RP2040
                         # QT2040 Trinkey
                         # MacroPad RP2040
+                        # Feather RP2040 ThinkInk
+                        # Feather RP2040 RFM
+                        # Feather RP2040 CAN Bus
                         vendor == 0x239A
-                        and product in (0x00F1, 0x00FD, 0x00F7, 0x0109, 0x0107)
+                        and product
+                        in (
+                            0x00F1,
+                            0x00FD,
+                            0x00F7,
+                            0x0109,
+                            0x0107,
+                            0x812C,
+                            0x812E,
+                            0x8130,
+                            0x0105,
+                        )
                     ):
                         self._chip_id = chips.RP2040_U2IF
                         return self._chip_id
@@ -166,6 +179,8 @@ class Chip:
         # pylint: disable=too-many-branches,too-many-statements
         # pylint: disable=too-many-return-statements
         """Attempt to detect the CPU on a computer running the Linux kernel."""
+        if self.detector.check_dt_compatible_value("ti,am625"):
+            return chips.AM625X
         if self.detector.check_dt_compatible_value("ti,am654"):
             return chips.AM65XX
 
@@ -211,6 +226,9 @@ class Chip:
 
         if self.detector.check_dt_compatible_value("radxa,rock-4c-plus"):
             return chips.RK3399_T
+
+        if self.detector.check_dt_compatible_value("rockchip,rk3399pro"):
+            return chips.RK3399PRO
 
         if self.detector.check_dt_compatible_value("rockchip,rk3399"):
             return chips.RK3399
@@ -269,6 +287,9 @@ class Chip:
         if self.detector.check_dt_compatible_value("sun20i-d1"):
             return chips.D1_RISCV
 
+        if self.detector.check_dt_compatible_value("imx8mp"):
+            return chips.IMX8MP
+
         if self.detector.check_dt_compatible_value("libretech,aml-s905x-cc"):
             return chips.S905X
 
@@ -291,6 +312,8 @@ class Chip:
                 ##                print('model_name =', model_name)
                 if "N3710" in model_name:
                     linux_id = chips.PENTIUM_N3710
+                if "N5105" in model_name:
+                    linux_id = chips.CELERON_N5105
                 elif "X5-Z8350" in model_name:
                     linux_id = chips.ATOM_X5_Z8350
                 elif "J4105" in model_name:
