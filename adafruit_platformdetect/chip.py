@@ -212,11 +212,11 @@ class Chip:
 
         # Older Builds
         if self.detector.check_dt_compatible_value("sifive"):
-            return chips.JH71x0
+            return chips.JH71X0
 
         # Newer Builds
         if self.detector.check_dt_compatible_value("jh7100"):
-            return chips.JH71x0
+            return chips.JH71X0
 
         if self.detector.check_dt_compatible_value("sun8i-a33"):
             return chips.A33
@@ -422,6 +422,8 @@ class Chip:
         Detect whether the given attribute is the currently-detected chip.  See
         list of constants at the top of this module for available options.
         """
+        if attr == "id":
+            raise AttributeError()  # Avoid infinite recursion
         if self.id == attr:
             return True
         return False

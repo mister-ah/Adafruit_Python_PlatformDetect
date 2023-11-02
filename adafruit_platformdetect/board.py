@@ -42,7 +42,7 @@ class Board:
         self.detector = detector
         self._board_id = None
 
-    # pylint: disable=invalid-name, protected-access, too-many-return-statements
+    # pylint: disable=invalid-name, protected-access, too-many-return-statements, too-many-lines
     @property
     def id(self) -> Optional[str]:
         """Return a unique id for the detected board, if any."""
@@ -123,7 +123,7 @@ class Board:
             board_id = self._sifive_id()
         elif chip_id == chips.C906:
             board_id = self._allwinner_id()
-        elif chip_id == chips.JH71x0:
+        elif chip_id == chips.JH71X0:
             board_id = self._beaglebone_id()
         elif chip_id == chips.MCP2221:
             board_id = boards.MICROCHIP_MCP2221
@@ -177,7 +177,12 @@ class Board:
         elif chip_id == chips.RK3568:
             board_id = self._rk3568_id()
         elif chip_id == chips.RK3588:
-            board_id = self._rock_pi_id() or self._armbian_id()
+            board_id = (
+                self._rock_pi_id()
+                or self._orange_pi_id()
+                or self._armbian_id()
+                or self._rk3588_id()
+            )
         elif chip_id == chips.RYZEN_V1605B:
             board_id = self._udoo_id()
         elif chip_id == chips.PENTIUM_N3710:
@@ -235,8 +240,11 @@ class Board:
 
                 if re_model:
                     pi_model = "".join(re_model.groups())
-                    available_models = boards._PI_REV_CODES.keys()
+                    available_models = boards._PI_MODELS.values()
                     for model in available_models:
+                        # Account for the PI_B_REV1/2 case
+                        if isinstance(model, dict) and pi_model in model:
+                            return model[pi_model]
                         if model == pi_model:
                             return model
 
@@ -342,7 +350,7 @@ class Board:
 
     # pylint: disable=too-many-return-statements
     def _armbian_id(self) -> Optional[str]:
-        """Check whether the current board is an OrangePi board."""
+        """Get the current board via the ARMBIAN release field."""
         board_value = self.detector.get_armbian_release_field("BOARD")
         board = None
 
@@ -368,6 +376,8 @@ class Board:
             board = boards.ORANGE_PI_2
         elif board_value == "orangepi3":
             board = boards.ORANGE_PI_3
+        elif board_value == "orangepi3b":
+            board = boards.ORANGE_PI_3B
         elif board_value == "orangepi3-lts":
             board = boards.ORANGE_PI_3_LTS
         elif board_value == "orangepi4":
@@ -384,6 +394,8 @@ class Board:
             board = boards.BANANA_PI_M2_BERRY
         elif board_value == "bananapim5":
             board = boards.BANANA_PI_M5
+        elif board_value == "bananapipro":
+            board = boards.LEMAKER_BANANA_PRO
         elif board_value == "orangepizeroplus2-h5":
             board = boards.ORANGE_PI_ZERO_PLUS_2H5
         elif board_value == "orangepizeroplus":
@@ -396,6 +408,8 @@ class Board:
             board = boards.NANOPI_DUO2
         elif board_value == "nanopineo":
             board = boards.NANOPI_NEO
+        elif board_value == "nanopineo2":
+            board = boards.NANOPI_NEO_2
         elif board_value == "nezha":
             board = boards.LICHEE_RV
         elif board_value == "pcduino2":
@@ -412,6 +426,14 @@ class Board:
         board_value = self.detector.get_device_model()
         if "OrangePi 4" in board_value:
             return boards.ORANGE_PI_4
+        return None
+
+    def _orange_pi_id(self) -> Optional[str]:
+        board_value = self.detector.get_device_model()
+        if "Orange Pi 5" in board_value:
+            return boards.ORANGE_PI_5
+        if "Orange Pi 3B" in board_value:
+            return boards.ORANGE_PI_3B
         return None
 
     def _sama5_id(self) -> Optional[str]:
@@ -540,6 +562,8 @@ class Board:
             board = boards.LUBANCAT1
         if board_value and "Radxa CM3 IO" in board_value:
             board = boards.RADXA_CM3
+        if board_value and "Rockchip RK3566 OPi 3B" in board_value:
+            board = boards.ORANGE_PI_3B
         return board
 
     def _rk3568_id(self) -> Optional[str]:
@@ -550,6 +574,14 @@ class Board:
             board = boards.LUBANCAT2
         if board_value and "ROCK3 Model A" in board_value:
             board = boards.ROCK_PI_3A
+        return board
+
+    def _rk3588_id(self) -> Optional[str]:
+        """Check what type of rk3588 board."""
+        board_value = self.detector.get_device_model()
+        board = None
+        if board_value and "LubanCat-4" in board_value:
+            board = boards.LUBANCAT4
         return board
 
     def _rock_pi_id(self) -> Optional[str]:
@@ -658,12 +690,16 @@ class Board:
         if "nanopi" in board_value:
             if "neo" in board_value and "SUN8I" in chip_id:
                 board = boards.NANOPI_NEO_AIR
+            elif "neo2" in board_value and "H5" in chip_id:
+                board = boards.NANOPI_NEO_2
         elif any(x in board_value for x in ("orange pi", "orangepi")):
             if "zero" in board_value:
                 if "H5" in chip_id:
                     board = boards.ORANGE_PI_ZERO_PLUS_2H5
                 elif "H616" in chip_id:
                     board = boards.ORANGE_PI_ZERO_2
+        elif "walnutpi-1b" in board_value:
+            board = boards.WALNUT_PI_1B
             # TODO: Add other specifc board contexts here
         return board
 
@@ -726,6 +762,11 @@ class Board:
     def any_siemens_simatic_iot2000(self) -> bool:
         """Check whether the current board is a SIEMENS SIMATIC IOT2000 Gateway."""
         return self.id in boards._SIEMENS_SIMATIC_IOT2000_IDS
+
+    @property
+    def any_walnutpi(self) -> bool:
+        """Check whether the current board is any defined Walnut Pi."""
+        return self.id in boards._WALNUT_PI_IDS
 
     @property
     def any_nanopi(self) -> bool:
@@ -858,6 +899,11 @@ class Board:
         return self.id in boards._BANANA_PI_IDS
 
     @property
+    def any_lemaker(self) -> bool:
+        """Check whether the current board is any LeMaker board."""
+        return self.id in boards._LEMAKER_IDS
+
+    @property
     def any_maaxboard(self) -> bool:
         """Check whether the current board is any BananaPi-family system."""
         return self.id in boards._MAAXBOARD_IDS
@@ -934,6 +980,7 @@ class Board:
             yield self.any_stm32mp1
             yield self.any_lubancat
             yield self.any_bananapi
+            yield self.any_lemaker
             yield self.any_maaxboard
             yield self.any_tisk_board
             yield self.any_siemens_simatic_iot2000
@@ -942,6 +989,7 @@ class Board:
             yield self.any_libre_computer_board
             yield self.generic_linux
             yield self.any_nxp_navq_board
+            yield self.any_walnutpi
 
         return any(condition for condition in lazily_generate_conditions())
 

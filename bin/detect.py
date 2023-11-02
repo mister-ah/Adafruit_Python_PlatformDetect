@@ -85,6 +85,9 @@ if detector.board.any_pynq_board:
 if detector.board.any_orange_pi:
     print("Orange Pi detected.")
 
+if detector.board.any_lemaker:
+    print("LeMaker board detected.")
+
 if detector.board.any_odroid_40_pin:
     print("Odroid detected.")
 
@@ -114,3 +117,6 @@ if detector.board.any_siemens_simatic_iot2000:
 
 if detector.board.any_nxp_navq_board:
     print("NXP NavQ board detected.")
+
+if detector.board.any_walnutpi:
+    print("Walnut Pi detected.")

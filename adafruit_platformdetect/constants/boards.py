@@ -38,6 +38,9 @@ ASUS_TINKER_BOARD = "ASUS_TINKER_BOARD"
 ASUS_TINKER_BOARD_2 = "ASUS_TINKER_BOARD_2"
 ASUS_TINKER_EDGE_R = "ASUS_TINKER_EDGE_R"
 
+# Walnut Pi boards
+WALNUT_PI_1B = "WALNUT_PI_1B"
+
 # Clockwork Pi boards
 CLOCKWORK_CPI3 = "CLOCKWORK_CPI3"
 
@@ -54,6 +57,7 @@ ORANGE_PI_ZERO_PLUS_2H5 = "ORANGE_PI_ZERO_PLUS_2H5"
 ORANGE_PI_ZERO_PLUS = "ORANGE_PI_ZERO_PLUS"
 ORANGE_PI_ZERO_2 = "ORANGE_PI_ZERO_2"
 ORANGE_PI_3 = "ORANGE_PI_3"
+ORANGE_PI_3B = "ORANGE_PI_3B"
 ORANGE_PI_3_LTS = "ORANGE_PI_3_LTS"
 ORANGE_PI_4 = "ORANGE_PI_4"
 ORANGE_PI_4_LTS = "ORANGE_PI_4_LTS"
@@ -63,12 +67,17 @@ ORANGE_PI_5 = "ORANGE_PI_5"
 NANOPI_NEO_AIR = "NANOPI_NEO_AIR"
 NANOPI_DUO2 = "NANOPI_DUO2"
 NANOPI_NEO = "NANOPI_NEO"
+NANOPI_NEO_2 = "NANOPI_NEO_2"
+
 
 # Banana Pi boards
 BANANA_PI_M2_ZERO = "BANANA_PI_M2_ZERO"
 BANANA_PI_M2_PLUS = "BANANA_PI_M2_PLUS"
 BANANA_PI_M2_BERRY = "BANANA_PI_M2_BERRY"
 BANANA_PI_M5 = "BANANA_PI_M5"
+
+# LeMaker boards
+LEMAKER_BANANA_PRO = "LEMAKER_BANANA_PRO"
 
 # NVIDIA Jetson boards
 JETSON_TX1 = "JETSON_TX1"
@@ -105,6 +114,7 @@ LUBANCAT_STM32MP157 = "LUBANCAT_STM32MP157"
 LUBANCAT_ZERO = "LUBANCAT_ZERO"
 LUBANCAT1 = "LUBANCAT1"
 LUBANCAT2 = "LUBANCAT2"
+LUBANCAT4 = "LUBANCAT4"
 
 # Various Raspberry Pi models
 RASPBERRY_PI_B_REV1 = "RASPBERRY_PI_B_REV1"
@@ -127,6 +137,7 @@ RASPBERRY_PI_AVNET_IIOT_GW = "RASPBERY_PI_AVNET_IIOT_GW"
 RASPBERRY_PI_400 = "RASPBERRY_PI_400"
 RASPBERRY_PI_CM4 = "RASPBERRY_PI_CM4"
 RASPBERRY_PI_CM4S = "RASPBERRY_PI_CM4S"
+RASPBERRY_PI_5 = "RASPBERRY_PI_5"
 
 ODROID_C1 = "ODROID_C1"
 ODROID_C1_PLUS = "ODROID_C1_PLUS"
@@ -214,6 +225,9 @@ _ASUS_TINKER_BOARD_IDS = (
     ASUS_TINKER_EDGE_R,
 )
 
+# WalnutPi
+_WALNUT_PI_IDS = (WALNUT_PI_1B,)
+
 # STM32MP1
 _STM32MP1_IDS = (
     STM32MP157C_DK2,
@@ -237,6 +251,7 @@ _ORANGE_PI_IDS = (
     ORANGE_PI_ZERO_PLUS,
     ORANGE_PI_ZERO_2,
     ORANGE_PI_3,
+    ORANGE_PI_3B,
     ORANGE_PI_3_LTS,
     ORANGE_PI_4,
     ORANGE_PI_4_LTS,
@@ -244,7 +259,12 @@ _ORANGE_PI_IDS = (
 )
 
 # NanoPi
-_NANOPI_IDS = (NANOPI_NEO_AIR, NANOPI_DUO2, NANOPI_NEO)
+_NANOPI_IDS = (
+    NANOPI_NEO_AIR,
+    NANOPI_DUO2,
+    NANOPI_NEO,
+    NANOPI_NEO_2,
+)
 
 # BananaPI
 _BANANA_PI_IDS = (
@@ -254,6 +274,9 @@ _BANANA_PI_IDS = (
     BANANA_PI_M5,
 )
 
+# LeMaker
+_LEMAKER_IDS = (LEMAKER_BANANA_PRO,)
+
 # LubanCat
 _LUBANCAT_IDS = (
     LUBANCAT_IMX6ULL,
@@ -261,6 +284,7 @@ _LUBANCAT_IDS = (
     LUBANCAT_ZERO,
     LUBANCAT1,
     LUBANCAT2,
+    LUBANCAT4,
 )
 
 # Coral boards
@@ -311,6 +335,9 @@ _JETSON_IDS = (
         (
             "nvidia,p3737-0000+p3701-0000",
             "nvidia,p3737-0000+p3701-0004",
+            "nvidia,p3737-0000+p3701-0008",
+            "nvidia,p3737-0000+p3701-0005",
+            "nvidia,p3737-0000+p3701-0001",
         ),
     ),
     (
@@ -350,6 +377,7 @@ _RASPBERRY_PI_40_PIN_IDS = (
     RASPBERRY_PI_4B,
     RASPBERRY_PI_AVNET_IIOT_GW,
     RASPBERRY_PI_400,
+    RASPBERRY_PI_5,
 )
 
 _RASPBERRY_PI_CM_IDS = (
@@ -407,6 +435,7 @@ _BEAGLEBONE_BOARD_IDS = {
     BEAGLEBONE_AI64: (("B0", "7.BBONEA")),
     # Original bone/white:
     BEAGLEBONE: (
+        ("A3", "A335BONE00A3"),
         ("A4", "A335BONE00A4"),
         ("A5", "A335BONE00A5"),
         ("A6", "A335BONE00A6"),
@@ -444,145 +473,6 @@ _BEAGLEBONE_BOARD_IDS = {
     BEAGLELOGIC_STANDALONE: (("A", "A335BLGC000A"),),
 }
 
-# Pi revision codes from:
-#   https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
-
-# Each tuple here contains both the base codes, and the versions that indicate
-# the Pi is overvolted / overclocked - for 4-digit codes, this will be prefixed
-# with 1000, and for 6-digit codes it'll be prefixed with 1.  These are placed
-# on separate lines.
-
-_PI_REV_CODES = {
-    RASPBERRY_PI_B_REV1: (
-        # Regular codes:
-        "0002",
-        "0003",
-        # Overvolted/clocked versions:
-        "1000002",
-        "1000003",
-    ),
-    RASPBERRY_PI_B_REV2: (
-        "0004",
-        "0005",
-        "0006",
-        "000d",
-        "000e",
-        "000f",
-        "1000005",
-        "1000006",
-        "100000d",
-        "100000e",
-        "100000f",
-    ),
-    RASPBERRY_PI_B_PLUS: ("0010", "0013", "900032", "1000010", "1000013", "1900032"),
-    RASPBERRY_PI_A: ("0007", "0008", "0009", "1000007", "1000008", "1000009"),
-    RASPBERRY_PI_A_PLUS: ("0012", "0015", "900021", "1000012", "1000015", "1900021"),
-    RASPBERRY_PI_CM1: ("0011", "0014", "10000011", "10000014"),
-    RASPBERRY_PI_ZERO: (
-        "900092",
-        "920092",
-        "900093",
-        "920093",
-        "1900092",
-        "1920092",
-        "1900093",
-        "1920093",  # warranty bit 24
-        "2900092",
-        "2920092",
-        "2900093",
-        "2920093",  # warranty bit 25
-    ),
-    RASPBERRY_PI_ZERO_W: ("9000c1", "19000c1", "29000c1"),  # warranty bits
-    RASPBERRY_PI_2B: (
-        "a01040",
-        "a01041",
-        "a02042",
-        "a21041",
-        "a22042",
-        "1a01040",
-        "1a01041",
-        "1a02042",
-        "1a21041",
-        "1a22042",  # warranty bit 24
-        "2a01040",
-        "2a01041",
-        "2a02042",
-        "2a21041",
-        "2a22042",  # warranty bit 25
-        "3a01040",
-        "3a01041",
-        "3a02042",
-        "3a21041",
-        "3a22042",
-    ),
-    RASPBERRY_PI_3B: (
-        "a02082",
-        "a22082",
-        "a32082",
-        "a52082",
-        "1a02082",
-        "1a22082",
-        "1a32082",
-        "1a52082",  # warranty bit 24
-        "2a02082",
-        "2a22082",
-        "2a32082",
-        "2a52082",  # warranty bit 25
-    ),
-    RASPBERRY_PI_3B_PLUS: ("a020d3", "1a020d3", "2a020d3", "a020d4"),  # warranty bits
-    RASPBERRY_PI_AVNET_IIOT_GW: ("60a220b0",),
-    RASPBERRY_PI_CM3: (
-        "a020a0",
-        "a220a0",
-        "1a020a0",
-        "2a020a0",  # warranty bits
-        "1a220a0",
-        "2a220a0",
-    ),
-    RASPBERRY_PI_3A_PLUS: ("9020e0", "19020e0", "29020e0"),  # warranty bits
-    RASPBERRY_PI_CM3_PLUS: ("a02100", "1a02100", "2a02100"),  # warranty bits
-    RASPBERRY_PI_4B: (
-        "a03111",
-        "b03111",
-        "c03111",
-        "a03112",
-        "b03112",
-        "c03112",
-        "b03114",
-        "c03114",
-        "d03114",
-        "a03115",
-        "b03115",
-        "c03115",
-        "d03115",
-        "1a03111",
-        "2a03111",
-        "1b03111",
-        "2b03111",  # warranty bits
-        "1c03111",
-        "2c03111",
-        "1a03112",
-        "2a03112",
-        "1b03112",
-        "2b03112",
-        "1c03112",
-        "2c03112",
-        "80c03114",
-    ),
-    RASPBERRY_PI_400: ("c03130", "c03131"),
-    RASPBERRY_PI_CM4: (
-        "a03140",
-        "a03141",
-        "b03140",
-        "b03141",
-        "c03140",
-        "c03141",
-        "d03140",
-        "d03141",
-    ),
-    RASPBERRY_PI_ZERO_2_W: ("902120", "2902120"),
-}
-
 _PI_MODELS = {
     0x00: RASPBERRY_PI_A,
     0x01: {
@@ -606,6 +496,7 @@ _PI_MODELS = {
     0x13: RASPBERRY_PI_400,
     0x14: RASPBERRY_PI_CM4,
     0x15: RASPBERRY_PI_CM4S,
+    0x17: RASPBERRY_PI_5,
 }
 
 # Onion omega boards
